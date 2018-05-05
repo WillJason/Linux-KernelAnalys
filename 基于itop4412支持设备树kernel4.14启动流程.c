@@ -170,7 +170,13 @@ asmlinkage void __init start_kernel(void)
     radix_tree_init();  
     /* init some links before init_ISA_irqs() */  
     early_irq_init();  
-    init_IRQ();  
+    init_IRQ();
+    /*
+    	->irqchip_init
+    		该函数将查找__irqchip_of_table，匹配到Device Tree中的中断控制器，调用相应的初
+    		始化函数，把特定CPU的中断信息注册进内核中断子系统中，使内核能响应并处理相应的中断。
+    		对于s3c2416，在drivers\irqchip\irq-s3c24xx.c中声明了相应的中断控制器。
+    */  
     tick_init();  
     init_timers();  
     hrtimers_init();  
