@@ -113,7 +113,16 @@ asmlinkage void __init start_kernel(void)
     pr_notice("%s", linux_banner);                                                   //显示内核版本信息  
     setup_arch(&command_line);  
 		/*查找标签在/arch/arm/kernel
-			->
+			->setup_machine_fdt
+				->early_init_dt_verify
+					首先检查fdt头部的合法性，然后设置fdt全局变量以及计算crc。这个initial_boot_params变量后边在访问设备树的时候还会用到。
+				->of_flat_dt_match_machine
+					->of_flat_dt_get_machine_name
+						of_flat_dt_get_machine_name用于获取如下属性: model  compatible  如果model没有设置,就用compatible来设置machine_name.
+				->early_init_dt_scan_nodes
+					->of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);解析chosen bootargs 
+					->of_scan_flat_dt(early_init_dt_scan_root, NULL);解析size-cells address-cells
+					->of_scan_flat_dt(early_init_dt_scan_memory, NULL);解析device_type    linux,usable-memory
 			->unflatten_device_tree
 			一、根据设备树创建device node链表
 			在u-boot引导内核的时候，会将设备树在物理内存中的物理起始地址（存放在寄
@@ -301,7 +310,10 @@ static int __ref kernel_init(void *unused)
     int ret;  
   
     kernel_init_freeable();                 //该函数中完成smp开启  驱动初始化 共享内存初始化等工作  
-    /*	-> do_basic_setup
+    /*	->smp_prepare_cpus(setup_max_cpus);
+    			会调用到exynos_smp_prepare_cpus：
+    				初始化ARM中的SMP处理器
+    		-> do_basic_setup
     			->do_initcalls
     			二、遍历device node链表，创建并注册platform_device
     			在do_initcalls函数中，kernel会依次执行各个initcall函数，在这个过程中，会调用 
